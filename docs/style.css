@@ -1,0 +1,155 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  
+  #map {
+    height: calc(100vh - 56px);
+  }
+  
+  /* Top bar */
+  .topbar{
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 14px;
+    border-bottom: 1px solid #e5e5e5;
+    background: #fff;
+    position: relative;
+    z-index: 3000;
+  }
+  
+  .title{ font-weight: 700; }
+  .control{ display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  select{
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    outline: none;
+    background: #fff;
+  }
+  
+  /* Custom searchable dropdown (combo) */
+  .combo { position: relative; min-width: 220px; }
+  .comboBtn{
+    width: 220px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+  }
+  .comboBtn:focus { outline: 2px solid rgba(0,0,0,0.08); }
+  
+  .comboChevron{ opacity: 0.7; }
+  
+  .comboPanel{
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 260px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.14);
+    padding: 10px;
+    z-index: 4000;
+    display: none;
+  }
+  
+  .comboPanel.open { display: block; }
+  
+  #comboSearch{
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    outline: none;
+    margin-bottom: 8px;
+  }
+  
+  .comboList{
+    max-height: 260px;
+    overflow: auto;
+    border-radius: 10px;
+    border: 1px solid #f0f0f0;
+  }
+  
+  .comboItem{
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .comboItem:hover{
+    background: #f6f6f6;
+  }
+  .comboItem.active{
+    background: #efefef;
+    font-weight: 600;
+  }
+  
+  /* Legend */
+  .legend{
+    background: #fff;
+    padding: 10px 10px;
+    border-radius: 12px;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    font-size: 12px;
+    line-height: 1.25;
+    min-width: 200px;
+  }
+  
+  .legendTitle{
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  
+  .legendRow{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 5px 0;
+  }
+  
+  .swatch{
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(0,0,0,0.25); /* light border */
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+  }
+  
+  /* Chart card (make sure it is visible) */
+  #chartCard{
+    position: fixed;
+    left: 14px;
+    bottom: 14px;
+    z-index: 3500;
+    width: 380px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 10px 12px 12px 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  }
+  
+  .cardTitle{
+    font-weight: 800;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+  
+  .cardHint{
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Italy Solar Production</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="title">Italy Solar Production</div>
+
+    <label class="control">
+      Period:
+      <select id="periodSelect">
+        <option value="annual">Annual</option>
+        <option value="winter">Winter</option>
+        <option value="spring" selected>Spring</option>
+        <option value="summer">Summer</option>
+        <option value="autumn">Autumn</option>
+      </select>
+    </label>
+
+    <!-- Custom searchable dropdown (NO LIBRARY) -->
+    <div class="control">
+      <span>Region:</span>
+      <div class="combo" id="regionCombo">
+        <button class="comboBtn" id="comboBtn" type="button">
+          <span id="comboLabel">All regions</span>
+          <span class="comboChevron">▾</span>
+        </button>
+
+        <div class="comboPanel" id="comboPanel" aria-hidden="true">
+          <input id="comboSearch" type="text" placeholder="Search region..." />
+          <div class="comboList" id="comboList"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div id="map"></div>
+
+  <!-- Chart card (fixed on top of map) -->
+  <div id="chartCard">
+    <div class="cardTitle">Top 5 Regions (Selected Period)</div>
+    <div class="cardHint" id="chartHint"></div>
+    <canvas id="top5Chart" height="160"></canvas>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Chart.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <script src="./main.js"></script>
+</body>
+</html>
