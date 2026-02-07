@@ -23,6 +23,7 @@ html, body {
 
 .title{ font-weight: 700; }
 .control{ display: flex; align-items: center; gap: 8px; font-size: 14px; }
+
 select{
   padding: 6px 8px;
   border: 1px solid #ddd;
@@ -32,7 +33,8 @@ select{
 }
 
 /* Custom searchable dropdown (combo) */
-.combo { position: relative; min-width: 220px; }
+.combo { position: relative; min-width: 220px; z-index: 5000; }
+
 .comboBtn{
   width: 220px;
   display: flex;
@@ -45,8 +47,8 @@ select{
   background: #fff;
   cursor: pointer;
 }
-.comboBtn:focus { outline: 2px solid rgba(0,0,0,0.08); }
 
+.comboBtn:focus { outline: 2px solid rgba(0,0,0,0.08); }
 .comboChevron{ opacity: 0.7; }
 
 .comboPanel{
@@ -59,7 +61,7 @@ select{
   border-radius: 12px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.14);
   padding: 10px;
-  z-index: 4000;
+  z-index: 6000;
   display: none;
 }
 
@@ -87,9 +89,9 @@ select{
   cursor: pointer;
   font-size: 14px;
 }
-.comboItem:hover{
-  background: #f6f6f6;
-}
+
+.comboItem:hover{ background: #f6f6f6; }
+
 .comboItem.active{
   background: #efefef;
   font-weight: 600;
@@ -163,8 +165,8 @@ select{
 
 .logos img{
   height: 28px;
-  max-height: 28px;
   width: auto;
+  max-height: 28px;
   object-fit: contain;
   display: block;
 }
@@ -178,8 +180,4 @@ select{
   font-size: 12px;
   color: #666;
   background: rgba(255,255,255,0.92);
-  border: 1px solid #e5e5e5;
-  border-radius: 12px;
-  padding: 6px 10px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-}
+  border: 1px solid #e5e
