@@ -1,6 +1,6 @@
 // ===== Supabase credentials =====
 const SUPABASE_URL = "https://fkrmcelxtpyvnmztqkqe.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrcm1jZWx4dHB5dm5tenRxa3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzY0MzksImV4cCI6MjA4NTcxMjQzOX0.I5BvnFvsKf5mXFRsG67uiMihj5svUIWDEh-f5LbRnoM"; // <-- your 208-char JWT
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrcm1jZWx4dHB5dm5tenRxa3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzY0MzksImV4cCI6MjA4NTcxMjQzOX0.I5BvnFvsKf5mXFRsG67uiMihj5svUIWDEh-f5LbRnoM";
 
 // ===== Data source =====
 const TABLE = "regions_solar_prod_long_geojson";
@@ -33,10 +33,10 @@ let legendControl = null;
 let regionLayerIndex = new Map();
 let selectedRegion = ""; // "" means All
 let allRegions = [];
-let currentPeriod = "spring";
+let currentSeason = "spring";
 
 // ===== DOM refs =====
-const periodSelect = document.getElementById("periodSelect");
+const seasonSelect = document.getElementById("seasonSelect");
 const chartHint = document.getElementById("chartHint");
 
 // Custom dropdown refs
@@ -93,12 +93,12 @@ function getColorByBreaks(val, breaks) {
 }
 
 // ===== Supabase fetch =====
-async function fetchRows(period) {
+async function fetchRows(season) {
   const select = `${COL_REGION},${COL_PERIOD},${COL_VALUE},${COL_GEOM}`;
   const url =
     `${SUPABASE_URL}/rest/v1/${TABLE}` +
     `?select=${encodeURIComponent(select)}` +
-    `&${COL_PERIOD}=eq.${encodeURIComponent(period)}`;
+    `&${COL_PERIOD}=eq.${encodeURIComponent(season)}`;
 
   const res = await fetch(url, {
     headers: {
@@ -137,7 +137,7 @@ function addLegend(breaksGwh) {
       `> ${formatGWh(breaksGwh[3])} GWh`
     ];
 
-    div.innerHTML = `<div class="legendTitle">Production (GWh • quantiles)</div>`;
+    div.innerHTML = `<div class="legendTitle">Solar production by region (GWh, quantile classes)</div>`;
 
     labels.forEach((lab, i) => {
       div.innerHTML += `
@@ -155,7 +155,7 @@ function addLegend(breaksGwh) {
 }
 
 // ===== Chart (Top 5) =====
-function updateTop5Chart(features, period) {
+function updateTop5Chart(features, season) {
   const canvas = document.getElementById("top5Chart");
 
   if (!window.Chart) {
@@ -170,8 +170,8 @@ function updateTop5Chart(features, period) {
   const values = top5.map(f => Number(f.properties.value_gwh));
 
   chartHint.textContent = selectedRegion
-    ? `Period: ${period} • Map zoom: ${selectedRegion}`
-    : `Period: ${period}`;
+    ? `Season: ${season} • Zoom: ${selectedRegion}`
+    : `Season: ${season}`;
 
   if (top5Chart) top5Chart.destroy();
 
@@ -179,7 +179,7 @@ function updateTop5Chart(features, period) {
     type: "bar",
     data: {
       labels,
-      datasets: [{ label: `Production (GWh • ${period})`, data: values }]
+      datasets: [{ label: `Production (GWh • ${season})`, data: values }]
     },
     options: {
       responsive: true,
@@ -271,16 +271,15 @@ function zoomToRegion(regionName) {
 }
 
 // ===== Main render =====
-async function renderPeriod(period) {
-  currentPeriod = period;
-  console.log("Rendering period:", period);
+async function renderSeason(season) {
+  currentSeason = season;
+  console.log("Rendering season:", season);
 
-  const rows = await fetchRows(period);
+  const rows = await fetchRows(season);
   console.log("Rows fetched:", rows.length);
 
   const features = rows.map(toFeature).filter(Boolean);
 
-  // IMPORTANT: bins based on GWh (so legend is GWh and meaningful)
   const valuesGwh = features.map(f => Number(f.properties.value_gwh)).filter(Number.isFinite);
 
   if (valuesGwh.length === 0) {
@@ -318,7 +317,7 @@ async function renderPeriod(period) {
 
       layer.bindPopup(
         `<b>${p.region}</b><br/>
-         Period: ${p.period}<br/>
+         Season: ${p.period}<br/>
          Production: ${formatGWh(Number(p.value_gwh))} GWh`
       );
 
@@ -330,7 +329,7 @@ async function renderPeriod(period) {
   }).addTo(map);
 
   addLegend(breaksGwh);
-  updateTop5Chart(features, period);
+  updateTop5Chart(features, season);
 
   if (selectedRegion && regionLayerIndex.has(selectedRegion)) {
     zoomToRegion(selectedRegion);
@@ -340,8 +339,8 @@ async function renderPeriod(period) {
 }
 
 // ===== UI events =====
-periodSelect.addEventListener("change", () => {
-  renderPeriod(periodSelect.value).catch(console.error);
+seasonSelect.addEventListener("change", () => {
+  renderSeason(seasonSelect.value).catch(console.error);
 });
 
 comboBtn.addEventListener("click", () => {
@@ -360,4 +359,4 @@ document.addEventListener("keydown", (e) => {
 
 // ===== Start =====
 comboLabel.textContent = "All regions";
-renderPeriod(periodSelect.value).catch(console.error);
+renderSeason(seasonSelect.value).catch(console.error);
