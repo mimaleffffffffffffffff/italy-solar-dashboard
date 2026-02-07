@@ -14,8 +14,8 @@
     <div class="title">Italy Solar Production</div>
 
     <label class="control">
-      Period:
-      <select id="periodSelect">
+      Season:
+      <select id="seasonSelect">
         <option value="annual">Annual</option>
         <option value="winter">Winter</option>
         <option value="spring" selected>Spring</option>
@@ -24,7 +24,6 @@
       </select>
     </label>
 
-    <!-- Custom searchable dropdown (NO LIBRARY) -->
     <div class="control">
       <span>Region:</span>
       <div class="combo" id="regionCombo">
@@ -39,22 +38,34 @@
         </div>
       </div>
     </div>
+
+    <!-- LOGOS (top-right) -->
+    <div class="logos">
+      <a href="https://www.enea.it" target="_blank" rel="noopener">
+        <img src="./assets/logos/enea.png" alt="ENEA logo" />
+      </a>
+      <a href="https://www.polito.it" target="_blank" rel="noopener">
+        <img src="./assets/logos/polito.png" alt="Politecnico di Torino logo" />
+      </a>
+      <a href="#" target="_blank" rel="noopener">
+        <img src="./assets/logos/renea.png" alt="RENEA logo" />
+      </a>
+    </div>
   </header>
 
   <div id="map"></div>
 
-  <!-- Chart card (fixed on top of map) -->
   <div id="chartCard">
-    <div class="cardTitle">Top 5 Regions (Selected Period)</div>
+    <div class="cardTitle">Top 5 Regions (Selected Season)</div>
     <div class="cardHint" id="chartHint"></div>
     <canvas id="top5Chart" height="160"></canvas>
   </div>
 
+  <!-- Footer note -->
+  <footer class="footerNote">regional scale · prototype</footer>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- Chart.js (CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
   <script src="./main.js"></script>
 </body>
 </html>
