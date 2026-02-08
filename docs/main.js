@@ -5,7 +5,7 @@ const SUPABASE_URL = "https://fkrmcelxtpyvnmztqkqe.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrcm1jZWx4dHB5dm5tenRxa3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzY0MzksImV4cCI6MjA4NTcxMjQzOX0.I5BvnFvsKf5mXFRsG67uiMihj5svUIWDEh-f5LbRnoM";
 
 // ===== Data source =====
-const TABLE = "regions_solar_prod_long_geojson";
+const TABLE = "regions_solar_prod_long_geojson_web";
 const COL_REGION = "region";
 const COL_PERIOD = "period";      // values: annual/winter/spring/summer/autumn
 const COL_VALUE  = "production";
