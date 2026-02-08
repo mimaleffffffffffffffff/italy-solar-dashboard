@@ -6,7 +6,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // ===== Data source =====
 // After you create the physical web table in Supabase, switch to: "regions_solar_prod_web"
-const TABLE = "regions_solar_prod_long_geojson_web";
+const TABLE = "regions_solar_prod_web";
 
 const COL_REGION = "region";
 const COL_PERIOD = "period";      // values: annual/winter/spring/summer/autumn
