@@ -1,3 +1,5 @@
+// main.js
+
 // ===== Supabase credentials =====
 const SUPABASE_URL = "https://fkrmcelxtpyvnmztqkqe.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrcm1jZWx4dHB5dm5tenRxa3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzY0MzksImV4cCI6MjA4NTcxMjQzOX0.I5BvnFvsKf5mXFRsG67uiMihj5svUIWDEh-f5LbRnoM";
@@ -5,7 +7,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // ===== Data source =====
 const TABLE = "regions_solar_prod_long_geojson";
 const COL_REGION = "region";
-const COL_PERIOD = "period";
+const COL_PERIOD = "period";      // values: annual/winter/spring/summer/autumn
 const COL_VALUE  = "production";
 const COL_GEOM   = "geom";
 
@@ -21,7 +23,7 @@ function formatGWh(x) {
 }
 
 // ===== Leaflet map init =====
-const map = L.map("map").setView([42.5, 12.5], 5);
+const map = L.map("map", { preferCanvas: true }).setView([42.5, 12.5], 5);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 18,
@@ -35,7 +37,7 @@ let selectedRegion = "";
 let allRegions = [];
 
 // ===== DOM refs =====
-const seasonSelect = document.getElementById("periodSelect"); // KEEP THIS ID
+const seasonSelect = document.getElementById("periodSelect"); // keep this ID
 const chartHint = document.getElementById("chartHint");
 
 const comboBtn = document.getElementById("comboBtn");
@@ -46,6 +48,12 @@ const comboList = document.getElementById("comboList");
 
 // ===== Chart =====
 let top5Chart = null;
+
+// ===== Performance cache + abort =====
+const seasonCache = new Map(); // season -> { rows, features, breaks }
+let fetchAbortController = null;
+let lastSeasonRendered = null;
+let didInitialFit = false;
 
 // ===== Helpers =====
 function toFeature(row) {
@@ -83,22 +91,32 @@ function getColor(val, breaks) {
   return colors[4];
 }
 
-// ===== Supabase fetch =====
+// ===== Supabase fetch (cached + abortable) =====
 async function fetchRows(season) {
+  const cached = seasonCache.get(season);
+  if (cached?.rows) return cached.rows;
+
+  if (fetchAbortController) fetchAbortController.abort();
+  fetchAbortController = new AbortController();
+
   const url =
     `${SUPABASE_URL}/rest/v1/${TABLE}` +
     `?select=${COL_REGION},${COL_PERIOD},${COL_VALUE},${COL_GEOM}` +
     `&${COL_PERIOD}=eq.${season}`;
 
   const res = await fetch(url, {
+    signal: fetchAbortController.signal,
     headers: {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`
     }
   });
 
-  if (!res.ok) throw new Error("Supabase fetch failed");
-  return await res.json();
+  if (!res.ok) throw new Error(`Supabase fetch failed (${res.status})`);
+
+  const rows = await res.json();
+  seasonCache.set(season, { rows });
+  return rows;
 }
 
 // ===== Legend =====
@@ -134,6 +152,7 @@ function addLegend(breaks) {
 // ===== Chart =====
 function updateChart(features, season) {
   const ctx = document.getElementById("top5Chart");
+
   const sorted = features
     .slice()
     .sort((a, b) => b.properties.value_gwh - a.properties.value_gwh)
@@ -154,6 +173,7 @@ function updateChart(features, season) {
       }]
     },
     options: {
+      animation: false, // small speed boost
       plugins: { legend: { display: false } },
       scales: {
         y: { title: { display: true, text: "GWh" } }
@@ -184,7 +204,7 @@ function renderComboList(filter) {
     selectedRegion = "";
     comboLabel.textContent = "All regions";
     closeCombo();
-    map.fitBounds(geoLayer.getBounds());
+    if (geoLayer) map.fitBounds(geoLayer.getBounds(), { animate: false });
   };
   comboList.appendChild(allItem);
 
@@ -198,24 +218,19 @@ function renderComboList(filter) {
         selectedRegion = r;
         comboLabel.textContent = r;
         closeCombo();
-        map.fitBounds(regionLayerIndex.get(r).getBounds());
+        const lyr = regionLayerIndex.get(r);
+        if (lyr) map.fitBounds(lyr.getBounds(), { animate: false });
       };
       comboList.appendChild(item);
     });
 }
 
-// ===== Main render =====
-async function renderSeason(season) {
-  const rows = await fetchRows(season);
-  const features = rows.map(toFeature).filter(Boolean);
-  const values = features.map(f => f.properties.value_gwh);
-
+// ===== Draw season (separated for caching) =====
+function drawSeason(features, breaks, season) {
   allRegions = [...new Set(features.map(f => f.properties.region))].sort();
 
   if (geoLayer) map.removeLayer(geoLayer);
   regionLayerIndex.clear();
-
-  const breaks = quantileBreaks(values);
 
   geoLayer = L.geoJSON(features, {
     style: f => ({
@@ -236,11 +251,46 @@ async function renderSeason(season) {
 
   addLegend(breaks);
   updateChart(features, season);
-  map.fitBounds(geoLayer.getBounds());
+
+  // Fit only on first render or real season change
+  if (!didInitialFit || lastSeasonRendered !== season) {
+    map.fitBounds(geoLayer.getBounds(), { animate: false });
+    didInitialFit = true;
+    lastSeasonRendered = season;
+  }
 }
 
-// ===== UI EVENTS (FIXED) =====
+// ===== Main render (cached) =====
+async function renderSeason(season) {
+  const cached = seasonCache.get(season);
+  if (cached?.features && cached?.breaks) {
+    drawSeason(cached.features, cached.breaks, season);
+    return;
+  }
+
+  let rows;
+  try {
+    rows = await fetchRows(season);
+  } catch (err) {
+    if (err.name === "AbortError") return; // user changed quickly
+    console.error(err);
+    alert("Data loading failed. Open console for details.");
+    return;
+  }
+
+  const features = rows.map(toFeature).filter(Boolean);
+  const values = features.map(f => f.properties.value_gwh);
+  const breaks = quantileBreaks(values);
+
+  seasonCache.set(season, { rows, features, breaks });
+  drawSeason(features, breaks, season);
+}
+
+// ===== UI EVENTS =====
 seasonSelect.addEventListener("change", () => {
+  // changing season resets region zoom selection (optional but cleaner)
+  selectedRegion = "";
+  comboLabel.textContent = "All regions";
   renderSeason(seasonSelect.value);
 });
 
@@ -249,9 +299,7 @@ comboBtn.addEventListener("click", (e) => {
   comboPanel.classList.contains("open") ? closeCombo() : openCombo();
 });
 
-comboPanel.addEventListener("click", (e) => {
-  e.stopPropagation();
-});
+comboPanel.addEventListener("click", (e) => e.stopPropagation());
 
 comboSearch.addEventListener("input", () => {
   renderComboList(comboSearch.value);
@@ -262,3 +310,4 @@ document.addEventListener("click", () => closeCombo());
 // ===== START =====
 comboLabel.textContent = "All regions";
 renderSeason(seasonSelect.value);
+
