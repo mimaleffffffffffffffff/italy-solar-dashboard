@@ -5,7 +5,9 @@ const SUPABASE_URL = "https://fkrmcelxtpyvnmztqkqe.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrcm1jZWx4dHB5dm5tenRxa3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzY0MzksImV4cCI6MjA4NTcxMjQzOX0.I5BvnFvsKf5mXFRsG67uiMihj5svUIWDEh-f5LbRnoM";
 
 // ===== Data source =====
+// After you create the physical web table in Supabase, switch to: "regions_solar_prod_web"
 const TABLE = "regions_solar_prod_long_geojson_web";
+
 const COL_REGION = "region";
 const COL_PERIOD = "period";      // values: annual/winter/spring/summer/autumn
 const COL_VALUE  = "production";
@@ -55,9 +57,14 @@ let fetchAbortController = null;
 let lastSeasonRendered = null;
 let didInitialFit = false;
 
+// Prevent double-render (fast clicking / racing requests)
+let isRendering = false;
+
 // ===== Helpers =====
 function toFeature(row) {
   if (!row[COL_GEOM]) return null;
+
+  // Your Supabase view/table returns geom as JSON (GeoJSON object), so this should work directly.
   const gwh = kwhToGwh(row[COL_VALUE]);
 
   return {
@@ -173,7 +180,7 @@ function updateChart(features, season) {
       }]
     },
     options: {
-      animation: false, // small speed boost
+      animation: false,
       plugins: { legend: { display: false } },
       scales: {
         y: { title: { display: true, text: "GWh" } }
@@ -204,6 +211,8 @@ function renderComboList(filter) {
     selectedRegion = "";
     comboLabel.textContent = "All regions";
     closeCombo();
+
+    // Only fit if we actually have a layer
     if (geoLayer) map.fitBounds(geoLayer.getBounds(), { animate: false });
   };
   comboList.appendChild(allItem);
@@ -218,6 +227,7 @@ function renderComboList(filter) {
         selectedRegion = r;
         comboLabel.textContent = r;
         closeCombo();
+
         const lyr = regionLayerIndex.get(r);
         if (lyr) map.fitBounds(lyr.getBounds(), { animate: false });
       };
@@ -225,7 +235,7 @@ function renderComboList(filter) {
     });
 }
 
-// ===== Draw season (separated for caching) =====
+// ===== Draw season =====
 function drawSeason(features, breaks, season) {
   allRegions = [...new Set(features.map(f => f.properties.region))].sort();
 
@@ -252,19 +262,24 @@ function drawSeason(features, breaks, season) {
   addLegend(breaks);
   updateChart(features, season);
 
-  // Fit only on first render or real season change
-  if (!didInitialFit || lastSeasonRendered !== season) {
+  // Fit ONLY the first time the app loads (avoid costly zoom on every season switch)
+  if (!didInitialFit) {
     map.fitBounds(geoLayer.getBounds(), { animate: false });
     didInitialFit = true;
-    lastSeasonRendered = season;
   }
+
+  lastSeasonRendered = season;
 }
 
 // ===== Main render (cached) =====
 async function renderSeason(season) {
+  if (isRendering) return;
+  isRendering = true;
+
   const cached = seasonCache.get(season);
   if (cached?.features && cached?.breaks) {
     drawSeason(cached.features, cached.breaks, season);
+    isRendering = false;
     return;
   }
 
@@ -272,9 +287,13 @@ async function renderSeason(season) {
   try {
     rows = await fetchRows(season);
   } catch (err) {
-    if (err.name === "AbortError") return; // user changed quickly
+    if (err.name === "AbortError") {
+      isRendering = false;
+      return;
+    }
     console.error(err);
     alert("Data loading failed. Open console for details.");
+    isRendering = false;
     return;
   }
 
@@ -284,11 +303,12 @@ async function renderSeason(season) {
 
   seasonCache.set(season, { rows, features, breaks });
   drawSeason(features, breaks, season);
+
+  isRendering = false;
 }
 
 // ===== UI EVENTS =====
 seasonSelect.addEventListener("change", () => {
-  // changing season resets region zoom selection (optional but cleaner)
   selectedRegion = "";
   comboLabel.textContent = "All regions";
   renderSeason(seasonSelect.value);
@@ -310,4 +330,3 @@ document.addEventListener("click", () => closeCombo());
 // ===== START =====
 comboLabel.textContent = "All regions";
 renderSeason(seasonSelect.value);
-
