@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -15,7 +16,7 @@
 
     <label class="control">
       Season:
-      <!-- IMPORTANT: keep id periodSelect if your JS is the previous one -->
+      <!-- IMPORTANT: keep id periodSelect -->
       <select id="periodSelect">
         <option value="annual">Annual</option>
         <option value="winter">Winter</option>
@@ -42,10 +43,6 @@
 
     <!-- LOGOS (top-right) -->
     <div class="logos">
-      <a href="https://www.enea.it" target="_blank" rel="noopener">
-        <img src="./assets/logos/enea.svg" alt="ENEA logo" />
-      </a>
-
       <a href="https://www.polito.it" target="_blank" rel="noopener">
         <img src="./assets/logos/Logo_PoliTo_dal_2021_blu-2.svg" alt="Politecnico di Torino logo" />
       </a>
@@ -59,9 +56,6 @@
     <div class="cardHint" id="chartHint"></div>
     <canvas id="top5Chart" height="160"></canvas>
   </div>
-
-  <!-- Footer note -->
-  <footer class="footerNote">regional scale · prototype</footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
